@@ -8,6 +8,7 @@
 #include <GL/gl.h>
 
 #include <iostream>
+#include <vector>
 
 #include "../include/mandelbrot.cuh"
 
@@ -17,12 +18,14 @@ namespace gl {
 };
 
 namespace win {
-  int width = 1920;
-  int height = 1080;
+  int width = 800;
+  int height = 600;
 };
 
 static const char* vertexSource = 
 R"(#version 330 core
+
+out vec2 v_uv;
 
 void main() {
   const vec2 pos[3] = vec2[3](
@@ -32,15 +35,21 @@ void main() {
   );
 
   gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
+  v_uv = 0.5 * (pos[gl_VertexID] + 1.0);
 })";
 
 static const char* fragmentSource = 
 R"(#version 330 core
 
+uniform sampler2D u_tex;
+
+in vec2 v_uv;
+
 out vec4 fragColor;
   
 void main() {
-  fragColor = vec4(0.5, 0.7, 1.0, 1.0);
+  fragColor = texture(u_tex, v_uv);
+  // fragColor = vec4(v_uv.x, v_uv.y, 0.0, 1.0f);
 })";
 
 int main() {
@@ -66,6 +75,11 @@ int main() {
     std::cerr << "Failed to initialize GLEW" << std::endl;
     return -1;
   }
+
+  auto vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+  auto renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+  std::cout << "GL_VENDOR=" << (vendor?vendor:"?") 
+          << "  GL_RENDERER=" << (renderer?renderer:"?") << "\n";
 
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexSource, nullptr); 
@@ -94,6 +108,28 @@ int main() {
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win::width, win::height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+  GLuint pbo;
+  glGenBuffers(1, &pbo);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, win::width * win::height * 4, nullptr, GL_DYNAMIC_DRAW);
+
+  registerPixelBuffer(pbo);
+
+  glUseProgram(program);
+  GLint loc = glGetUniformLocation(program, "u_tex");
+  if (loc == -1) std::cerr << "u_tex not found" << std::endl;
+  glUniform1i(loc, 0);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, tex);
+
   bool isRunning = true;
   while (isRunning){
     SDL_Event event;
@@ -118,6 +154,16 @@ int main() {
     glViewport(0, 0, win::width, win::height);
     glClearColor(1.0, 0.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    drawGradient(win::width, win::height);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex); 
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+   
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::width, win::height, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 

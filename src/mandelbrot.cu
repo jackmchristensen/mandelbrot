@@ -8,7 +8,16 @@ namespace cuda {
 }
 
 __global__ void gradient(uchar4* pixels, int width, int height) {
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
 
+  if (x >= width || y >= height) return;
+
+  pixels[y*width + x] = make_uchar4((float(x)/width)*255, (float(y)/height)*255, 0, 255);
+}
+
+__device__ float hueToRGB(int p, int q, int t) {
+  return 1.0f;
 }
 
 void registerPixelBuffer(GLuint pbo) {
@@ -23,7 +32,7 @@ void drawGradient(int width, int height) {
 
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
-  gradient<<<block, grid>>>(d_pixels, width, height);
-
+  gradient<<<grid, block>>>(d_pixels, width, height);
+  cudaDeviceSynchronize();
   cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
 }
