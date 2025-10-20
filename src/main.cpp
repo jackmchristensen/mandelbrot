@@ -40,7 +40,7 @@ R"(#version 330 core
 out vec4 fragColor;
   
 void main() {
-  fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+  fragColor = vec4(0.5, 0.7, 1.0, 1.0);
 })";
 
 int main() {
@@ -117,7 +117,7 @@ int main() {
     glUseProgram(program);
 
     glViewport(0, 0, win::width, win::height);
-    glClearColor(0.5, 0.7, 1.0, 1.0);
+    glClearColor(1.0, 0.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);

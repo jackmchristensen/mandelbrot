@@ -39,4 +39,4 @@ endif()
 
 set_target_properties(mandelbrot PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR} CUDA_SEPARABLE_COMPILATION ON)
 
-set_source_files_properties(src/mandelbrot.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(${SRC_DIR}/mandelbrot.cu PROPERTIES LANGUAGE CUDA)
