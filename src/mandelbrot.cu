@@ -1,29 +1,29 @@
-#include <cstdio>
 #include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 #include "../include/mandelbrot.cuh"
 
-__global__ void gradient(uchar4 *pixels, int width, int height) {
+namespace cuda {
+  cudaGraphicsResource* cuda_pbo;
+}
+
+__global__ void gradient(uchar4* pixels, int width, int height) {
 
 }
 
-void foo() {
-  printf("Hello, World!\n"); 
+void registerPixelBuffer(GLuint pbo) {
+  cudaGraphicsGLRegisterBuffer(&cuda::cuda_pbo, pbo, cudaGraphicsMapFlagsWriteDiscard);
 }
 
-// int main() {
-//   int width = 1920;
-//   int height = 1080;
-//
-//   uchar4 *pixels;
-//
-//   cudaMallocManaged(&pixels, width * height * sizeof(float));
-//
-//   dim3 blockSize = {16, 16};
-//   dim3 numBlocks = {(uint)(width + 15)/16, (uint)(height + 15)/16};
-//
-//   gradient<<<blockSize, numBlocks>>>(pixels, width, height);
-//
-//   cudaDeviceSynchronize();
-//
-// }
+void drawGradient(int width, int height) {
+  cudaGraphicsMapResources(1, &cuda::cuda_pbo);
+  uchar4* d_pixels = nullptr;
+  size_t bytes = 0;
+  cudaGraphicsResourceGetMappedPointer((void**)&d_pixels, &bytes, cuda::cuda_pbo);
+
+  dim3 block(16, 16);
+  dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
+  gradient<<<block, grid>>>(d_pixels, width, height);
+
+  cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
+}

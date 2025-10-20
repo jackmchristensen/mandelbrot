@@ -2,4 +2,5 @@
 
 void gradient(char *pixels, int width, int height);
 
-void foo();
+void registerPixelBuffer(GLuint pbo);
+void drawGradient(int width, int height);

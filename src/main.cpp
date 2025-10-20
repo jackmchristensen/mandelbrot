@@ -44,7 +44,6 @@ void main() {
 })";
 
 int main() {
-  foo();
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     std::cerr << "Failed to initialize SDL" << std::endl;
     return -1;
