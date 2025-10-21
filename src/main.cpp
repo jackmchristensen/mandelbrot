@@ -161,7 +161,6 @@ int main() {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
    
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::width, win::height, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
-
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -169,6 +168,7 @@ int main() {
     SDL_GL_SwapWindow(window);
   }
 
+  glDeleteTextures(1, &tex);
   glDeleteVertexArrays(1, &vao);
   glDeleteProgram(program);
   SDL_GL_DestroyContext(glContext);
