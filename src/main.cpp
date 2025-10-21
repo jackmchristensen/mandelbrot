@@ -19,6 +19,8 @@ namespace gl {
 namespace win {
   int width = 1280;
   int height = 720;
+  int hiWidth = 2 * width;
+  int hiHeight = 2 * height;
 };
 
 static const char* vertexSource = 
@@ -110,14 +112,16 @@ int main() {
   GLuint tex;
   glGenTextures(1, &tex);
   glBindTexture(GL_TEXTURE_2D, tex);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win::width, win::height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win::hiWidth, win::hiHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   GLuint pbo;
   glGenBuffers(1, &pbo);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-  glBufferData(GL_PIXEL_UNPACK_BUFFER, win::width * win::height * 4, nullptr, GL_DYNAMIC_DRAW);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, win::hiWidth * win::hiHeight * 4, nullptr, GL_DYNAMIC_DRAW);
 
   registerPixelBuffer(pbo);
 
@@ -128,6 +132,7 @@ int main() {
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tex);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::width, win::height, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
 
   bool isRunning = true;
   while (isRunning){
@@ -154,13 +159,13 @@ int main() {
     glClearColor(1.0, 0.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    drawGradient(win::width, win::height);
+    drawGradient(win::hiWidth, win::hiHeight);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex); 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
    
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::width, win::height, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::hiWidth, win::hiHeight, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
