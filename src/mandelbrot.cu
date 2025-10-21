@@ -63,7 +63,7 @@ void drawGradient(int width, int height) {
 
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
-  mandelbrot<<<grid, block>>>(d_pixels, width, height, -3.5556f, 1.7778f, -1.5f, 1.5f, 500);
+  mandelbrot<<<grid, block>>>(d_pixels, width, height, -2.370f, 1.185f, -1.0f, 1.0f, 500);
   cudaDeviceSynchronize();
   cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
 }
