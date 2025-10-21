@@ -2,6 +2,7 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
 
 #include <GL/glew.h>
@@ -24,9 +25,9 @@ namespace win {
 };
 
 namespace img {
-  float yRange = 2.0f;
-  float xRange = yRange * (float(win::width)/win::height);
-  float center[2] { (-(xRange*(2.0f/3.0f))+(xRange*(1.0f/3.0f))) / 2.0f, 0.0f };
+  double yRange = 2.0;
+  double xRange = yRange * (double(win::width)/win::height);
+  double center[2] { (-(xRange*(2.0/3.0))+(xRange*(1.0/3.0))) / 2.0, 0.0 };
 }
 
 static const char* vertexSource = 
@@ -140,6 +141,9 @@ int main() {
   glBindTexture(GL_TEXTURE_2D, tex);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, win::width, win::height, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void*>(0));
 
+  float xMouse, yMouse;
+  double xMouseD, yMouseD;
+
   bool isRunning = true;
   while (isRunning){
     SDL_Event event;
@@ -150,6 +154,24 @@ int main() {
             case SDL_SCANCODE_ESCAPE:
               isRunning = false;
               break;
+            case SDL_SCANCODE_EQUALS:
+              SDL_GetMouseState(&xMouse, &yMouse);
+              xMouseD = (double(xMouse) / win::width) * img::xRange - (img::xRange * 0.5) + img::center[0];
+              yMouseD = (double(yMouse) / win::height) * img::yRange - (img::yRange * 0.5) - img::center[1];
+              img::center[0] = (xMouseD + img::center[0]) / 2.0;
+              img::center[1] = (-yMouseD + img::center[1]) / 2.0;
+              img::xRange *= 0.5;
+              img::yRange *= 0.5;
+              continue;
+            case SDL_SCANCODE_MINUS:
+              SDL_GetMouseState(&xMouse, &yMouse);
+              xMouseD = (1.0-(double(xMouse) / win::width)) * img::xRange - (img::xRange * 0.5) + img::center[0];
+              yMouseD = (1.0-(double(yMouse) / win::height)) * img::yRange - (img::yRange * 0.5) - img::center[1];
+              img::center[0] = (xMouseD + img::center[0]) / 2.0;
+              img::center[1] = (-yMouseD + img::center[1]) / 2.0;
+              img::xRange *= 2.0;
+              img::yRange *= 2.0;
+              continue;
             default:
               continue;
           }

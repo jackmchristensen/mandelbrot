@@ -20,27 +20,27 @@ __device__ float hueToRGB(int p, int q, int t) {
   return 1.0f;
 }
 
-__global__ void mandelbrot(uchar4* pixels, int width, int height, float xmin, float xmax, float ymin, float ymax, int maxIter) {
+__global__ void mandelbrot(uchar4* pixels, int width, int height, double xmin, double xmax, double ymin, double ymax, int maxIter) {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (x >= width || y >= height) return;
   
-  float u = (x + 0.5f) / float(width);
-  float v = (y + 0.5f) / float(height);
-  float cr = xmin + u * (xmax - xmin);
-  float ci = ymin + v * (ymax - ymin);
+  double u = (x + 0.5) / double(width);
+  double v = (y + 0.5) / double(height);
+  double cr = xmin + u * (xmax - xmin);
+  double ci = ymin + v * (ymax - ymin);
 
-  float zr = 0.0f, zi = 0.0f;
+  double zr = 0.0f, zi = 0.0;
   int iter = 0;
-  while (zr*zr + zi*zi < 4.0f && iter < maxIter) {
-    float zr2 = zr*zr - zi*zi + cr;
-    zi = 2.0f * zr * zi + ci;
+  while (zr*zr + zi*zi < 4.0 && iter < maxIter) {
+    double zr2 = zr*zr - zi*zi + cr;
+    zi = 2.0 * zr * zi + ci;
     zr = zr2;
     iter++;
   }
 
-  float t = iter / float(maxIter);
+  double t = iter / double(maxIter);
 
   unsigned char r = (unsigned char)(9.0f * (1 - t) * t*t*t * 255.0f);
   unsigned char g = (unsigned char)(15.0f * (1 - t) * (1 - t) * t*t * 255.0f);
@@ -55,16 +55,16 @@ void registerPixelBuffer(GLuint pbo) {
   cudaGraphicsGLRegisterBuffer(&cuda::cuda_pbo, pbo, cudaGraphicsMapFlagsWriteDiscard);
 }
 
-void drawGradient(int width, int height, float* center, float xRange, float yRange) {
+void drawGradient(int width, int height, double* center, double xRange, double yRange) {
   cudaGraphicsMapResources(1, &cuda::cuda_pbo);
   uchar4* d_pixels = nullptr;
   size_t bytes = 0;
   cudaGraphicsResourceGetMappedPointer((void**)&d_pixels, &bytes, cuda::cuda_pbo);
 
-  float xmin = center[0] - (xRange * 0.5f);
-  float xmax = center[0] + (xRange * 0.5f);
-  float ymin = center[1] - (yRange * 0.5f);
-  float ymax = center[1] + (yRange * 0.5f);
+  double xmin = center[0] - (xRange * 0.5f);
+  double xmax = center[0] + (xRange * 0.5f);
+  double ymin = center[1] - (yRange * 0.5f);
+  double ymax = center[1] + (yRange * 0.5f);
 
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
