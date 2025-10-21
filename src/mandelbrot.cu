@@ -20,6 +20,37 @@ __device__ float hueToRGB(int p, int q, int t) {
   return 1.0f;
 }
 
+__global__ void mandelbrot(uchar4* pixels, int width, int height, float xmin, float xmax, float ymin, float ymax, int maxIter) {
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if (x >= width || y >= height) return;
+  
+  float u = (x + 0.5f) / float(width);
+  float v = (y + 0.5f) / float(height);
+  float cr = xmin + u * (xmax - xmin);
+  float ci = ymin + v * (ymax - ymin);
+
+  float zr = 0.0f, zi = 0.0f;
+  int iter = 0;
+  while (zr*zr + zi*zi < 4.0f && iter < maxIter) {
+    float zr2 = zr*zr - zi*zi + cr;
+    zi = 2.0f * zr * zi + ci;
+    zr = zr2;
+    iter++;
+  }
+
+  float t = iter / float(maxIter);
+
+  unsigned char r = (unsigned char)(9.0f * (1 - t) * t*t*t * 255.0f);
+  unsigned char g = (unsigned char)(15.0f * (1 - t) * (1 - t) * t*t * 255.0f);
+  unsigned char b = (unsigned char)(8.5f * (1 - t) * (1 - t) * (1 - t) * t * 255.0f);
+
+  if (iter == maxIter) { r = g = b = 0; }
+
+  pixels[y*width+x] = make_uchar4(r, g, b, 255);
+}
+
 void registerPixelBuffer(GLuint pbo) {
   cudaGraphicsGLRegisterBuffer(&cuda::cuda_pbo, pbo, cudaGraphicsMapFlagsWriteDiscard);
 }
@@ -32,7 +63,7 @@ void drawGradient(int width, int height) {
 
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
-  gradient<<<grid, block>>>(d_pixels, width, height);
+  mandelbrot<<<grid, block>>>(d_pixels, width, height, -3.5556f, 1.7778f, -1.5f, 1.5f, 500);
   cudaDeviceSynchronize();
   cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
 }
