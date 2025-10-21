@@ -55,15 +55,20 @@ void registerPixelBuffer(GLuint pbo) {
   cudaGraphicsGLRegisterBuffer(&cuda::cuda_pbo, pbo, cudaGraphicsMapFlagsWriteDiscard);
 }
 
-void drawGradient(int width, int height) {
+void drawGradient(int width, int height, float* center, float xRange, float yRange) {
   cudaGraphicsMapResources(1, &cuda::cuda_pbo);
   uchar4* d_pixels = nullptr;
   size_t bytes = 0;
   cudaGraphicsResourceGetMappedPointer((void**)&d_pixels, &bytes, cuda::cuda_pbo);
 
+  float xmin = center[0] - (xRange * 0.5f);
+  float xmax = center[0] + (xRange * 0.5f);
+  float ymin = center[1] - (yRange * 0.5f);
+  float ymax = center[1] + (yRange * 0.5f);
+
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
-  mandelbrot<<<grid, block>>>(d_pixels, width, height, -2.370f, 1.185f, -1.0f, 1.0f, 500);
+  mandelbrot<<<grid, block>>>(d_pixels, width, height, xmin, xmax, ymin, ymax, 500);
   cudaDeviceSynchronize();
   cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
 }

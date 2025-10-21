@@ -23,6 +23,12 @@ namespace win {
   int hiHeight = 2 * height;
 };
 
+namespace img {
+  float yRange = 2.0f;
+  float xRange = yRange * (float(win::width)/win::height);
+  float center[2] { (-(xRange*(2.0f/3.0f))+(xRange*(1.0f/3.0f))) / 2.0f, 0.0f };
+}
+
 static const char* vertexSource = 
 R"(#version 330 core
 
@@ -159,7 +165,7 @@ int main() {
     glClearColor(1.0, 0.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    drawGradient(win::hiWidth, win::hiHeight);
+    drawGradient(win::hiWidth, win::hiHeight, img::center, img::xRange, img::yRange);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex); 
