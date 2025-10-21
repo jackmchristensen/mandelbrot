@@ -4,4 +4,4 @@ void gradient(char *pixels, int width, int height);
 
 bool checkDevice();
 void registerPixelBuffer(GLuint pbo);
-void drawGradient(int width, int height);
+void drawGradient(int width, int height, float* center, float xRange, float yRange);
