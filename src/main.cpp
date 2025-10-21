@@ -61,7 +61,7 @@ int main() {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl::kVersionMajor);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, gl::kVersionMinor);
   
-  SDL_Window *window = SDL_CreateWindow("Mandelbrot", win::width, win::height, SDL_WINDOW_OPENGL);
+  SDL_Window *window = SDL_CreateWindow("Mandelbrot", win::width, win::height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
   if (!window) {
     std::cerr << "Failed to create window" << std::endl;
     return -1;
