@@ -8,7 +8,6 @@
 #include <GL/gl.h>
 
 #include <iostream>
-#include <vector>
 
 #include "../include/mandelbrot.cuh"
 
