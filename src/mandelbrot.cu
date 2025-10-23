@@ -1,23 +1,12 @@
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
+#include <cstdio>
+
 #include "../include/mandelbrot.cuh"
 
 namespace cuda {
   cudaGraphicsResource* cuda_pbo;
-}
-
-__global__ void gradient(uchar4* pixels, int width, int height) {
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-  if (x >= width || y >= height) return;
-
-  pixels[y*width + x] = make_uchar4((float(x)/width)*255, (float(y)/height)*255, 0, 255);
-}
-
-__device__ float hueToRGB(int p, int q, int t) {
-  return 1.0f;
 }
 
 __global__ void mandelbrot(uchar4* pixels, int width, int height, double xmin, double xmax, double ymin, double ymax, int maxIter) {
@@ -55,7 +44,17 @@ void registerPixelBuffer(GLuint pbo) {
   cudaGraphicsGLRegisterBuffer(&cuda::cuda_pbo, pbo, cudaGraphicsMapFlagsWriteDiscard);
 }
 
-void drawGradient(int width, int height, double* center, double xRange, double yRange) {
+void UnregisterPixelBuffer() {
+  cudaDeviceSynchronize();
+  cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
+  cuda::cuda_pbo = nullptr;
+}
+
+void drawMandelbrot(int width, int height, double* center, double xRange, double yRange) {
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
   cudaGraphicsMapResources(1, &cuda::cuda_pbo);
   uchar4* d_pixels = nullptr;
   size_t bytes = 0;
@@ -68,7 +67,16 @@ void drawGradient(int width, int height, double* center, double xRange, double y
 
   dim3 block(16, 16);
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
-  mandelbrot<<<grid, block>>>(d_pixels, width, height, xmin, xmax, ymin, ymax, 500);
+
+  cudaEventRecord(start, 0);
+  mandelbrot<<<grid, block>>>(d_pixels, width, height, xmin, xmax, ymin, ymax, 200);
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+
+  float ms = 0.0f;
+  cudaEventElapsedTime(&ms, start, stop);
+  // printf("Kernel time: %.3fms\n", ms);
+
   cudaDeviceSynchronize();
   cudaGraphicsUnmapResources(1, &cuda::cuda_pbo);
 }
