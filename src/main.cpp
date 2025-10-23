@@ -204,9 +204,9 @@ int main() {
         case SDL_EVENT_WINDOW_RESIZED:
           flags |= Render | Resize;
           continue;
-        // case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-        //   flags |= Render | Resize;
-        //   continue;
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+          flags |= Render | Resize;
+          continue;
         case SDL_EVENT_QUIT:
           isRunning = false;
           break;
