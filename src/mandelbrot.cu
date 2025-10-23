@@ -1,3 +1,10 @@
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  #include <Windows.h>   // must come before <GL/gl.h> on Windows
+#endif
+
+#include <GL/gl.h>       // gives you GLuint, GLenum, etc.
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
