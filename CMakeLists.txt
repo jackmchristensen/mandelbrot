@@ -6,13 +6,24 @@ set(CMAKE_CUDA_STANDARD 17)
 
 set(OUT_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
+set(SHADER_DIR ${CMAKE_SOURCE_DIR}/shaders)
 
 add_executable(mandelbrot
   ${SRC_DIR}/main.cpp
   ${SRC_DIR}/mandelbrot.cu
+  ${SRC_DIR}/Shaders.cpp
 )
 
 target_include_directories(mandelbrot PRIVATE ${SRC_DIR})
+
+# Copy shaders to output folder after build
+add_custom_command(
+    TARGET mandelbrot POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${SHADER_DIR}
+        ${OUT_DIR}/shaders
+    COMMENT "Copying shaders to output directory..."
+)
 
 find_package(OpenGL REQUIRED)
 target_link_libraries(mandelbrot PRIVATE OpenGL::GL)

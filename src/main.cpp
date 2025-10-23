@@ -11,10 +11,10 @@
 
 #include <iostream>
 #include <chrono>
-#include <bitset>
 
 #include "../include/mandelbrot.cuh"
 #include "../include/UpdateFlags.hpp"
+#include "../include/Shaders.hpp"
 
 namespace win {
   int width = 1280;
@@ -36,36 +36,6 @@ namespace scene {
   float scrollZoomMult = 0.1f;
   float keyZoomMult = 2.0f;
 };
-
-static const char* vertexSource = 
-R"(#version 330 core
-
-out vec2 v_uv;
-
-void main() {
-  const vec2 pos[3] = vec2[3](
-  vec2(-1.0, -1.0),
-  vec2(3.0, -1.0),
-  vec2(-1.0, 3.0)
-  );
-
-  gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0);
-  v_uv = 0.5 * (pos[gl_VertexID] + 1.0);
-})";
-
-static const char* fragmentSource = 
-R"(#version 330 core
-
-uniform sampler2D u_tex;
-
-in vec2 v_uv;
-
-out vec4 fragColor;
-  
-void main() {
-  fragColor = texture(u_tex, v_uv);
-  // fragColor = vec4(v_uv.x, v_uv.y, 0.0, 1.0f);
-})";
 
 double LinearInterpolation(double a, double b, float amt) {
   return a*double(amt) + b*(1.0-double(amt));
@@ -140,10 +110,14 @@ int main() {
           << "  GL_RENDERER=" << (renderer?renderer:"?") << "\n";
 
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  std::string vertexString = loadShader("shaders/vertex.glsl");
+  const char* vertexSource = vertexString.c_str();
   glShaderSource(vertexShader, 1, &vertexSource, nullptr); 
   glCompileShader(vertexShader);
 
   GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  std::string fragmentString = loadShader("shaders/fragment.glsl");
+  const char* fragmentSource = fragmentString.c_str();
   glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
   glCompileShader(fragmentShader);
 
@@ -187,8 +161,8 @@ int main() {
   if (loc == -1) std::cerr << "u_tex not found" << std::endl;
   glUniform1i(loc, 0);
 
-  RenderMandelbrot(image, tex, pbo);
-
+  float timer = 0.0f;
+  SDL_GL_SwapWindow(window);
   UpdateFlags flags = None;
   bool isRunning = true;
   while (isRunning){
@@ -225,10 +199,14 @@ int main() {
             ZoomToMouse(&image, window, 1.0f + (event.wheel.y * scene::scrollZoomMult));
           }
           flags |= Render;
+
           continue;
-        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_RESIZED:
           flags |= Render | Resize;
           continue;
+        // case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        //   flags |= Render | Resize;
+        //   continue;
         case SDL_EVENT_QUIT:
           isRunning = false;
           break;
@@ -262,7 +240,7 @@ int main() {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     // std::cout << "Frame time: " << elapsed.count() << " ms" << std::endl;
-  
+    
     SDL_GL_SwapWindow(window);
   }
 
