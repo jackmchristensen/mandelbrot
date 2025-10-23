@@ -10,10 +10,11 @@
 #include <GL/glext.h>
 
 #include <iostream>
-#include <math.h>
 #include <chrono>
+#include <bitset>
 
 #include "../include/mandelbrot.cuh"
+#include "../include/UpdateFlags.hpp"
 
 namespace win {
   int width = 1280;
@@ -186,7 +187,10 @@ int main() {
   if (loc == -1) std::cerr << "u_tex not found" << std::endl;
   glUniform1i(loc, 0);
 
-  bool isRunning = true; bool render, resize = false;
+  RenderMandelbrot(image, tex, pbo);
+
+  UpdateFlags flags = None;
+  bool isRunning = true;
   while (isRunning){
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -203,12 +207,13 @@ int main() {
               isRunning = false;
               break;
             case SDL_SCANCODE_EQUALS:
+              // TODO move ZoomToMouse out of switch statement
               ZoomToMouse(&image, window, scene::keyZoomMult);
-              render = true;
+              flags |= Render;
               continue;
             case SDL_SCANCODE_MINUS:
               ZoomToMouse(&image, window, 1.0f / scene::keyZoomMult);
-              render = true;
+              flags |= Render;
               continue;
             default:
               continue;
@@ -219,11 +224,10 @@ int main() {
           } else if (event.wheel.y < -0.01f){
             ZoomToMouse(&image, window, 1.0f + (event.wheel.y * scene::scrollZoomMult));
           }
-          render = true;
+          flags |= Render;
           continue;
         case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-          resize = true;
-          render = true;
+          flags |= Render | Resize;
           continue;
         case SDL_EVENT_QUIT:
           isRunning = false;
@@ -231,7 +235,7 @@ int main() {
       } 
     }
 
-    if (resize) {
+    if ((flags & Resize) == Resize) {
       SDL_GetWindowSizeInPixels(window, &win::width, &win::height);
       image.xRange = image.yRange * (float(win::width) / win::height);
       glViewport(0, 0, win::width, win::height);
@@ -244,11 +248,13 @@ int main() {
 
       UnregisterPixelBuffer();
       registerPixelBuffer(pbo);
-    }
 
-    if (render) {
+      flags &= ~Resize;
+    }
+  
+    if ((flags & Render) == Render) {
       RenderMandelbrot(image, tex, pbo);
-      render = false;
+      flags &= ~Render;
     }
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
