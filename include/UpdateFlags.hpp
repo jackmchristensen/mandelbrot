@@ -1,11 +1,13 @@
 #pragma once
 #include <stdint.h>
 
+// UpdateFlags serves as a human-readable way to mark what needs to be updated if the program detects a user input
 enum UpdateFlags : uint8_t {
   None    = 0,
-  Render  = 1 << 0,
-  Zoom    = 1 << 1,
-  Resize  = 1 << 2
+  Stop    = 1 << 0,
+  Render  = 1 << 1,
+  Zoom    = 1 << 2,
+  Resize  = 1 << 3
 };
 
 inline UpdateFlags operator|(UpdateFlags a, UpdateFlags b) {

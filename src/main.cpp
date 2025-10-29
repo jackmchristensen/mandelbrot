@@ -27,13 +27,16 @@ namespace scene {
     extern const int kVersionMajor = 3;
     extern const int kVersionMinor = 3;
   };
- 
+
+  // Variables needed to know where and how large to render Mandelbrot set
   struct Image {
     double xRange;
     double yRange;
     double center[2];
   };
 
+  // How much to zoom into Mandelbrot set used for ZoomToMouse() function
+  // Larger numbers zoom more
   float scrollZoomMult = 0.1f;
   float keyZoomMult = 2.0f;
 };
@@ -42,20 +45,22 @@ double LinearInterpolation(double a, double b, float amt) {
   return a*double(amt) + b*(1.0-double(amt));
 }
 
-void ConvertToMandelbrotCoord(double* newX, double* newY, double curX, double curY, double centerX, double centerY, double rangeX, double rangeY) {
-  *newX = curX * rangeX - (rangeX * 0.5) + centerX;
-  *newY = curY * rangeY - (rangeY * 0.5) - centerY;
-}
-
+// Zooms towards direction of mouse if zoomMult is positive and away if zoomMult is negative
+// Updates image's center position to be a linear interpolation between original image center and mouse position based on zoomMult
+// Scales x and y ranges based on zoomMult
 void ZoomToMouse(scene::Image* image, SDL_Window* window, float zoomMult) {
   float xMouse, yMouse;
   SDL_GetMouseState(&xMouse, &yMouse);
-
+  
   int width, height;
   SDL_GetWindowSizeInPixels(window, &width, &height);
 
+  // Normalizes mouse position to range from 0 to 1
+  // Inverts range if zoom out
   double xMouse_0_1 = zoomMult >= 1.0 ? double(xMouse) / width : 1.0 - (double(xMouse) / width);
   double yMouse_0_1 = zoomMult >= 1.0 ? double(yMouse) / height : 1.0 - (double(yMouse) / height);
+  
+  // Convert new mouse range to image coordinates
   xMouse_0_1 = xMouse_0_1 * image->xRange - (image->xRange * 0.5) + image->center[0];
   yMouse_0_1 = yMouse_0_1 * image->yRange - (image->yRange * 0.5) - image->center[1];
 
@@ -66,6 +71,7 @@ void ZoomToMouse(scene::Image* image, SDL_Window* window, float zoomMult) {
   image->yRange *= 1.0 / zoomMult;
 }
 
+// Calculates Mandelbrot set for given image and draws result to given texture buffer
 void RenderMandelbrot(scene::Image image, GLuint textureBuffer, GLuint pixelBuffer) { 
   drawMandelbrot(win::width, win::height, image.center, image.xRange, image.yRange);
 
@@ -91,6 +97,8 @@ int main() {
   }
   auto glContext = SDL_GL_CreateContext(window);
   SDL_GL_MakeCurrent(window, glContext);
+
+  // Disable vsync for consistent timing; set to 1 for power savings.
   SDL_GL_SetSwapInterval(0);
   
   glewExperimental = GL_TRUE;
@@ -105,11 +113,14 @@ int main() {
     { (-(image.xRange*(2.0/3.0))+(image.xRange*(1.0/3.0))) / 2.0, 0.0 }   // center
   };
 
+  // Check which device is being used by OpenGL
+  // NVIDIA device required
   auto vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
   auto renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
   std::cout << "GL_VENDOR=" << (vendor?vendor:"?") 
           << "  GL_RENDERER=" << (renderer?renderer:"?") << "\n";
 
+  // ------------------- Injest and compile shaders ----------------------
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   std::string vertexString = loadShader("shaders/vertex.glsl");
   const char* vertexSource = vertexString.c_str();
@@ -136,7 +147,9 @@ int main() {
   glDeleteShader(vertexShader);
   glDetachShader(program, fragmentShader);
   glDeleteShader(fragmentShader);
+  // ---------------------------------------------------------------------
 
+  // -------------- Initialize array and buffer objects ------------------
   GLuint vao;
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
@@ -161,13 +174,13 @@ int main() {
   GLint loc = glGetUniformLocation(program, "u_tex");
   if (loc == -1) std::cerr << "u_tex not found" << std::endl;
   glUniform1i(loc, 0);
+  // ---------------------------------------------------------------------
 
   float timer = 0.0f;
-  SDL_GL_SwapWindow(window);
   UpdateFlags flags = None;
-  bool isRunning = true;
-  while (isRunning){
+  while (!(flags & Stop)){
     auto start = std::chrono::high_resolution_clock::now();
+    float zoomAmnt = 0.0f;
 
     glViewport(0, 0, win::width, win::height);
     glClearColor(1.0, 0.0, 1.0, 1.0);
@@ -179,39 +192,39 @@ int main() {
         case SDL_EVENT_KEY_DOWN:
           switch (event.key.scancode) {
             case SDL_SCANCODE_ESCAPE:
-              isRunning = false;
+              flags |= Stop;
               break;
             case SDL_SCANCODE_EQUALS:
-              // TODO move ZoomToMouse out of switch statement
-              ZoomToMouse(&image, window, scene::keyZoomMult);
-              flags |= Render;
+              zoomAmnt = scene::keyZoomMult;
+              flags |= Zoom | Render;
               continue;
             case SDL_SCANCODE_MINUS:
-              ZoomToMouse(&image, window, 1.0f / scene::keyZoomMult);
-              flags |= Render;
+              zoomAmnt = 1.0f / scene::keyZoomMult;
+              flags |= Zoom | Render;
               continue;
             default:
               continue;
           }
         case SDL_EVENT_MOUSE_WHEEL:
-          if (event.wheel.y > 0.01f) {
-            ZoomToMouse(&image, window, 1.0f + (event.wheel.y * scene::scrollZoomMult));
-          } else if (event.wheel.y < -0.01f){
-            ZoomToMouse(&image, window, 1.0f + (event.wheel.y * scene::scrollZoomMult));
-          }
-          flags |= Render;
-
+          zoomAmnt = 1.0f + (event.wheel.y * scene::scrollZoomMult);
+          flags |= Zoom | Render;
           continue;
         case SDL_EVENT_WINDOW_RESIZED:
-          flags |= Render | Resize;
+          flags |= Resize | Render;
           continue;
         case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-          flags |= Render | Resize;
+          flags |= Resize | Render;
           continue;
         case SDL_EVENT_QUIT:
-          isRunning = false;
+          flags |= Stop;
           break;
       } 
+    }
+
+    
+    if ((flags & Zoom) == Zoom) {
+      ZoomToMouse(&image, window, zoomAmnt);
+      flags &= ~Zoom;
     }
 
     if ((flags & Resize) == Resize) {
