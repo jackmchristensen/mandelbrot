@@ -42,6 +42,13 @@ namespace scene {
   float keyZoomMult = 2.0f;
 };
 
+void setDefaultPositionValues(scene::Image* image) {
+  image->xRange = 2.0 * (float(win::width) / win::height);
+  image->yRange = 2.0;
+  image->center[0] = (-(image->xRange*(2.0/3.0))+(image->xRange*(1.0/3.0))) / 2.0;
+  image->center[1] = 0.0;
+}
+
 double LinearInterpolation(double a, double b, float amt) {
   return a*double(amt) + b*(1.0-double(amt));
 }
@@ -108,12 +115,15 @@ int main() {
     return -1;
   }
 
-  scene::Image image = {
-    2.0 * (float(win::width) / win::height),                              // xRange
-    2.0,                                                                  // yRange
-    { (-(image.xRange*(2.0/3.0))+(image.xRange*(1.0/3.0))) / 2.0, 0.0 },  // center
-    200                                                                   // iterations
-  };
+  scene::Image image;
+  setDefaultPositionValues(&image);
+  image.iterations = 200;
+  // scene::Image image = {
+  //   2.0 * (float(win::width) / win::height),                              // xRange
+  //   2.0,                                                                  // yRange
+  //   { (-(image.xRange*(2.0/3.0))+(image.xRange*(1.0/3.0))) / 2.0, 0.0 },  // center
+  //   200                                                                   // iterations
+  // };
 
   // Check which device is being used by OpenGL
   // NVIDIA device required
@@ -202,6 +212,10 @@ int main() {
               continue;
             case SDL_SCANCODE_MINUS:
               image.iterations = std::max(0, image.iterations - 25);
+              flags |= Render;
+              continue;
+            case SDL_SCANCODE_R:
+              setDefaultPositionValues(&image);
               flags |= Render;
               continue;
             default:
