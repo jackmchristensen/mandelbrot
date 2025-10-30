@@ -54,6 +54,6 @@ The executable will be placed in `bin/mandelbrot`.
 - Optimize kernel performance and early bailout logic.
 
 ## Screenshots
-[default](examples/default.png)
-[zoom](examples/zoom_00.png)
-[animation](examples/mandelbrot_example.gif)
+[default](https://github.com/jackmchristensen/mandelbrot/tree/main/examples/default.png)
+[zoom](https://github.com/jackmchristensen/mandelbrot/tree/main/examples/zoom_00.png)
+[animation](https://github.com/jackmchristensen/mandelbrot/tree/main/examples/mandelbrot_example.gif)
