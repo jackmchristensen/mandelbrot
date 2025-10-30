@@ -33,6 +33,7 @@ namespace scene {
     double xRange;
     double yRange;
     double center[2];
+    int iterations;
   };
 
   // How much to zoom into Mandelbrot set used for ZoomToMouse() function
@@ -73,7 +74,7 @@ void ZoomToMouse(scene::Image* image, SDL_Window* window, float zoomMult) {
 
 // Calculates Mandelbrot set for given image and draws result to given texture buffer
 void RenderMandelbrot(scene::Image image, GLuint textureBuffer, GLuint pixelBuffer) { 
-  drawMandelbrot(win::width, win::height, image.center, image.xRange, image.yRange);
+  drawMandelbrot(win::width, win::height, image.center, image.xRange, image.yRange, image.iterations);
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pixelBuffer);
   glBindTexture(GL_TEXTURE_2D, textureBuffer); 
@@ -110,7 +111,8 @@ int main() {
   scene::Image image = {
     2.0 * (float(win::width) / win::height),                              // xRange
     2.0,                                                                  // yRange
-    { (-(image.xRange*(2.0/3.0))+(image.xRange*(1.0/3.0))) / 2.0, 0.0 }   // center
+    { (-(image.xRange*(2.0/3.0))+(image.xRange*(1.0/3.0))) / 2.0, 0.0 },  // center
+    200                                                                   // iterations
   };
 
   // Check which device is being used by OpenGL
@@ -195,12 +197,12 @@ int main() {
               flags |= Stop;
               break;
             case SDL_SCANCODE_EQUALS:
-              zoomAmnt = scene::keyZoomMult;
-              flags |= Zoom | Render;
+              image.iterations += 25;
+              flags |= Render;
               continue;
             case SDL_SCANCODE_MINUS:
-              zoomAmnt = 1.0f / scene::keyZoomMult;
-              flags |= Zoom | Render;
+              image.iterations = std::max(0, image.iterations - 25);
+              flags |= Render;
               continue;
             default:
               continue;

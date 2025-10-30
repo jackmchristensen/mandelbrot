@@ -64,7 +64,7 @@ void UnregisterPixelBuffer() {
 // Width and height are the dimensions of the texture in pixels
 // Center is the center position in Mandelbrot coordinates
 // xRange and yRange represent the dimensions of the Mandelbrot set
-void drawMandelbrot(int width, int height, double* center, double xRange, double yRange) {
+void drawMandelbrot(int width, int height, double* center, double xRange, double yRange, int maxIterations) {
   // cudaEvent_t start, stop;
   // cudaEventCreate(&start);
   // cudaEventCreate(&stop);
@@ -87,7 +87,7 @@ void drawMandelbrot(int width, int height, double* center, double xRange, double
   dim3 grid((width+block.x-1)/block.x, (height+block.y-1)/block.y);
 
   // cudaEventRecord(start, 0);
-  mandelbrot<<<grid, block>>>(d_pixels, width, height, xmin, xmax, ymin, ymax, 200);
+  mandelbrot<<<grid, block>>>(d_pixels, width, height, xmin, xmax, ymin, ymax, maxIterations);
   // cudaEventRecord(stop, 0);
   // cudaEventSynchronize(stop);
 
