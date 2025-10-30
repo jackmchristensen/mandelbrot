@@ -1,6 +1,6 @@
 # Mandelbrot Renderer (CUDA + OpenGL + SDL3)
 This small project was my introduction to writing CUDA kernels and integrating them with OpenGL for visualization.
-It’s not a full-fledged fractal explorer — it’s a compact, self-contained experiment to learn how GPU compute, graphics interop, and real-time rendering fit together.
+It's an experiment to learn how GPU compute through CUDA and graphics pipelines work together by allowing the user to explore the Mandelbrot set.
 
 ## Purpose
 - Learn the basics of CUDA kernel launches, memory management, and device synchronization.
